@@ -1,9 +1,9 @@
-# Fast-O-M
+# Fast-Firewall
 
-一些可以快速运维服务的Shell脚本？
+可以快速调整防火墙的Shell脚本
 
 # 使用
 ```Shell
-sudo bash ./<name>.sh
+sudo bash ./firewall.sh
 ```
 
