@@ -4,6 +4,6 @@
 
 # 使用
 ```Shell
-sudo bash ./firewall.sh
+sudo bash ./<name>.sh
 ```
 
