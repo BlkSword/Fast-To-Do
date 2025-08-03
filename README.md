@@ -1,6 +1,6 @@
 # Fast-To-Do
 
-一些可以便捷化操作的Shell脚本
+一些便捷化操作的 Shell 脚本
 
 # 使用
 ```Shell
