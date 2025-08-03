@@ -1,6 +1,6 @@
-# Fast-Firewall
+# Fast-To-Do
 
-可以快速调整防火墙的Shell脚本
+一些可以便捷化操作的Shell脚本
 
 # 使用
 ```Shell
