@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 set -e
-
 source "$(dirname "$0")/scripts/common.sh"
-
 # If we are a root in a container and `sudo` doesn't exist
 # lets overwrite it with a function that just executes things passed to sudo
 # (yeah it won't work for sudo executed with flags)
@@ -11,7 +9,6 @@ if ! hash sudo 2> /dev/null && whoami | grep -q root; then
         ${*}
     }
 fi
-
 # Helper functions
 linux() {
     uname | grep -iqs Linux
@@ -19,11 +16,9 @@ linux() {
 osx() {
     uname | grep -iqs Darwin
 }
-
 install_apt() {
     # Backup original sources.list
     sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
-    
     # Use Tsinghua University mirror for Debian/Ubuntu
     if grep -iqs "ubuntu" /etc/os-release; then
         sudo bash -c 'cat > /etc/apt/sources.list' <<EOF
@@ -40,17 +35,14 @@ deb https://mirrors.tuna.tsinghua.edu.cn/debian/ $(lsb_release -cs)-backports ma
 deb https://mirrors.tuna.tsinghua.edu.cn/debian-security $(lsb_release -cs)/updates main contrib non-free
 EOF
     fi
-    
     sudo apt-get update || true
     sudo apt-get install -y git gdb gdbserver python3-dev python3-venv python3-setuptools libglib2.0-dev libc6-dbg curl
-
     if uname -m | grep -q x86_64; then
         sudo dpkg --add-architecture i386 || true
         sudo apt-get update || true
         sudo apt-get install -y libc6-dbg:i386 libgcc-s1:i386 || true
     fi
 }
-
 install_dnf() {
     # Use Tsinghua University mirror for Fedora
     if grep -iqs "fedora" /etc/os-release; then
@@ -60,28 +52,23 @@ install_dnf() {
                  /etc/yum.repos.d/fedora.repo \
                  /etc/yum.repos.d/fedora-updates.repo
     fi
-    
     sudo dnf update || true
     sudo dnf -y install gdb gdb-gdbserver python-devel python3-devel glib2-devel make curl
     sudo dnf -y debuginfo-install glibc
 }
-
 install_xbps() {
     # Use Tsinghua University mirror for Void Linux
     sudo cp /etc/xbps.d/00-repository-main.conf /etc/xbps.d/00-repository-main.conf.bak
     echo "repository=https://mirrors.tuna.tsinghua.edu.cn/voidlinux/current" | sudo tee /etc/xbps.d/00-repository-main.conf
-    
     sudo xbps-install -Su
     sudo xbps-install -Sy gdb gcc python-devel python3-devel glibc-devel make curl
     sudo xbps-install -Sy glibc-dbg
 }
-
 install_swupd() {
     # Clear Linux doesn't have official mirror support, but we can use proxy if needed
     sudo swupd update || true
     sudo swupd bundle-add gdb python3-basic make c-basic curl
 }
-
 install_zypper() {
     # Use USTC mirror for openSUSE
     if grep -iqs "opensuse" /etc/os-release; then
@@ -91,35 +78,28 @@ install_zypper() {
         sudo zypper ar -f https://mirrors.ustc.edu.cn/opensuse/update/leap/$(lsb_release -rs)/oss/ update-oss
         sudo zypper ar -f https://mirrors.ustc.edu.cn/opensuse/update/leap/$(lsb_release -rs)/non-oss/ update-non-oss
     fi
-    
     sudo zypper mr -e repo-oss-debug || sudo zypper mr -e repo-debug
     sudo zypper refresh || true
     sudo zypper install -y gdb gdbserver python-devel python3-devel glib2-devel make glibc-debuginfo curl
     sudo zypper install -y python2-pip || true # skip py2 installation if it doesn't exist
-
     if uname -m | grep -q x86_64; then
         sudo zypper install -y glibc-32bit-debuginfo || true
     fi
 }
-
 install_emerge() {
     # Gentoo doesn't typically use mirrors in the same way, but we can configure mirrorselect
     sudo emerge --sync
     sudo emerge --oneshot --deep --newuse --changed-use --changed-deps dev-lang/python dev-debug/gdb
 }
-
 install_oma() {
     # Use Aliyun mirror for AOSC OS
     sudo oma config set repo.main.url https://mirrors.aliyun.com/aosc/
-    
     sudo oma refresh || true
     sudo oma install -y gdb python-3 glib make glibc-dbg curl
-
     if uname -m | grep -q x86_64; then
         sudo oma install -y glibc+32-dbg || true
     fi
 }
-
 install_pacman() {
     # Use Tsinghua University mirror for Arch Linux
     if grep -iqs "arch" /etc/os-release; then
@@ -129,7 +109,6 @@ Server = https://mirrors.ustc.edu.cn/archlinux/\$repo/os/\$arch
 Server = https://mirrors.aliyun.com/archlinux/\$repo/os/\$arch
 EOF
     fi
-    
     read -p "Do you want to do a full system update? (y/n) [n] " answer
     # user want to perform a full system upgrade
     answer=${answer:-n} # n is default
@@ -144,21 +123,17 @@ EOF
         fi
     fi
 }
-
 install_freebsd() {
     # Use Tsinghua University mirror for FreeBSD
     sudo sed -i.bak -e 's|pkg+http://pkg.FreeBSD.org|pkg+https://mirrors.tuna.tsinghua.edu.cn/freebsd-pkg|g' /etc/pkg/FreeBSD.conf
-    
     sudo pkg update
     sudo pkg install git gdb python py39-pip cmake gmake curl
     which rustc || sudo pkg install rust
 }
-
 usage() {
     echo "Usage: $0 [--update]"
     echo "  --update: Install/update dependencies without checking ~/.gdbinit"
 }
-
 UPDATE_MODE=
 for arg in "$@"; do
     case $arg in
@@ -178,18 +153,14 @@ for arg in "$@"; do
             ;;
     esac
 done
-
 PYTHON=''
-
 if osx; then
     echo "Not supported on macOS. Please use one of the alternative methods listed at:"
     echo "https://pwndbg.re/pwndbg/dev/contributing/setup-pwndbg-dev/"
     exit 1
 fi
-
 if linux; then
     distro=$(grep "^ID=" /etc/os-release | cut -d'=' -f2 | sed -e 's/"//g')
-
     case $distro in
         "ubuntu")
             install_apt
@@ -235,16 +206,13 @@ if linux; then
             ;;
     esac
 fi
-
 if ! hash gdb; then
     echo "Could not find gdb in $PATH"
     exit 3
 fi
-
 # Find the Python used in compilation by GDB.
 PYVER=$(gdb -batch -q --nx -ex 'pi import sysconfig; print(sysconfig.get_config_var("VERSION"))')
 PYTHON=$(gdb -batch -q --nx -ex 'pi import sysconfig; print(sysconfig.get_config_vars().get("EXENAME", sysconfig.get_config_var("BINDIR")+"/python"+sysconfig.get_config_var("VERSION")+sysconfig.get_config_var("EXE")))')
-
 if [ ! -x "$PYTHON" ]; then
     echo "Error: '$PYTHON' does not exist or is not executable."
     echo ""
@@ -259,7 +227,6 @@ if [ ! -x "$PYTHON" ]; then
     echo "After making the necessary changes, rerun ./setup.sh"
     exit 1
 fi
-
 # Check python version supported: <3.10, 3.99>
 is_supported=$(echo "$PYVER" | grep -E '3\.(10|11|12|13|14|15|16|17|18|19|[2-9][0-9])' || true)
 if [[ -z "$is_supported" ]]; then
@@ -268,21 +235,16 @@ if [[ -z "$is_supported" ]]; then
     echo "'git checkout 2023.07.17' - python3.6, python3.7"
     exit 4
 fi
-
 # Create the python virtual environment
 echo "Creating virtualenv in path: ${PWNDBG_VENV_PATH}"
 ${PYTHON} -m venv -- ${PWNDBG_VENV_PATH}
-
 # Activate venv
 source ${PWNDBG_VENV_PATH}/bin/activate
-
-# Install uv inside the venv
-pip install uv
-
-# Install dependencies
+# Install uv inside the venv with domestic mirror
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple uv
+# Install dependencies with domestic mirror
 echo "Installing dependencies.."
-uv sync --extra gdb --extra lldb --quiet
-
+uv sync --index-url https://pypi.tuna.tsinghua.edu.cn/simple --extra gdb --extra lldb --quiet
 if [ -z "$UPDATE_MODE" ]; then
     if grep -qs '^[^#]*source.*pwndbg/gdbinit.py' ~/.gdbinit; then
         echo 'Pwndbg is already sourced in ~/.gdbinit .'
